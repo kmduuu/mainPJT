@@ -96,17 +96,27 @@ public class PostController {
 				System.out.println("2레이어 댓글"+b);	
 			}
 			
+			Team team = gameService.getTeamInfo(teamCode);
+			
 			model.addAttribute("commentList1", list1);
 			model.addAttribute("commentList2", list2);
 			model.addAttribute("emote", emote);
 			model.addAttribute("post", post);
+			model.addAttribute("teamCode", teamCode);
+			model.addAttribute("team", team);
 			return "forward:/post/getPost.jsp";
 	}
 	//전체글 리스트 조회
 	@GetMapping("getPostList")
-	public String getPostList(@RequestParam("teamCode") String teamCode, Model model,@RequestParam(value="currentPage", required = false) Integer currentPage ,@ModelAttribute("search") Search search) throws Exception {
+	public String getPostList(@RequestParam(value="teamCode", required = false) String teamCode,
+								@RequestParam(value="postType", required = false) String postType,
+								@RequestParam(value="currentPage", required = false) Integer currentPage ,
+								@ModelAttribute("search") Search search,
+								Model model, HttpSession session) throws Exception {
 			System.out.println("/post/getPostList : GET START");
-			System.out.println("-- 넘어온 데이터 ? "+teamCode+"//"+currentPage+"//"+search);	
+			System.out.println("-- 넘어온 데이터 ? "+teamCode+"//"+postType+"//"+currentPage+"//"+search);	
+			User user = (User)session.getAttribute("user");
+			teamCode = (teamCode == null) ? user.getTeamCode() : teamCode;
 			currentPage = (currentPage == null) ? 1 : currentPage;
 			search.setCurrentPage(currentPage);
 			search.setPageSize(pageSize);
@@ -114,6 +124,9 @@ public class PostController {
 			Map<String, Object> map = new HashMap<String,Object>();
 			map.put("teamCode", teamCode);
 			map.put("search", search);
+			if(postType != null) {
+				map.put("postType", postType);
+			}
 			map = postService.getPostList(map);
 			List<Post> list = (List<Post>)map.get("postList");
 			for(Post post:list) {
@@ -146,11 +159,14 @@ public class PostController {
 			}
 			//모든Team 정보 조회
 			List<Team> allTeam = gameService.getAllTeam();
+			Team team = gameService.getTeamInfo(teamCode);
 			
 			model.addAttribute("bestList",bestList);
 			model.addAttribute("allTeam", allTeam);
 			model.addAttribute("teamCode", teamCode);
-			return "forward:/post/listBestPost.jsp";
+			model.addAttribute("team", team);
+			return "forward:/post/listPost.jsp";
+
 	}
 	//공지사항 조회
 	@GetMapping("getNoticeList")
@@ -165,11 +181,15 @@ public class PostController {
 			}
 			//모든Team 정보 조회
 			List<Team> allTeam = gameService.getAllTeam();
+			Team team = gameService.getTeamInfo(teamCode);
+
 			
 			model.addAttribute("noticeList",noticeList);
 			model.addAttribute("allTeam", allTeam);
 			model.addAttribute("teamCode", teamCode);
-			return "forward:/post/listNotice.jsp";
+			model.addAttribute("team", team);
+			return "forward:/post/listPost.jsp";
+
 	}
 	//본인작성게시물 조회
 	@GetMapping("getMyPostList")
@@ -194,6 +214,11 @@ public class PostController {
 			for(Post post:list) {
 				System.out.println(post);
 			}
+
+			//모든Team 정보 조회
+			List<Team> allTeam = gameService.getAllTeam();
+			Team team = gameService.getTeamInfo(teamCode);
+
 			
 			Integer totalCount = ((Integer)map.get("totalCount")).intValue();
 			Page resultPage = new Page(search.getCurrentPage(),totalCount,pageUnit, pageSize);
@@ -201,7 +226,11 @@ public class PostController {
 			
 			model.addAttribute("list", list);
 			model.addAttribute("resultPage", resultPage);
-			return "forward:/post/listMyPost.jsp";
+			model.addAttribute("allTeam", allTeam);
+			model.addAttribute("teamCode", teamCode);
+			model.addAttribute("team", team);
+			return "forward:/post/listPost.jsp";
+
 	}
 	
 	@GetMapping("addPost")
